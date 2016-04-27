@@ -11,7 +11,7 @@ import com.typesafe.config.ConfigFactory
 import spray.json.{DefaultJsonProtocol, _}
 
 import scala.collection.SortedMap
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{Future, ExecutionContextExecutor}
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
@@ -52,7 +52,14 @@ trait Service extends JsonSupportProtocols {
     } ~
       pathPrefix("api" / "people") {
         path(JavaUUID) { id =>
-          complete(people(id.toString))
+          val getPerson = Future {
+            people.getOrElse(id.toString, None)
+          }
+
+          onSuccess(getPerson) {
+            case person: Person => complete(person)
+            case _ => complete(404, None)
+          }
         } ~
           logRequest("POST-PERSON") {
             post {
