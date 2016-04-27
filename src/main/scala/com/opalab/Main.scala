@@ -1,54 +1,80 @@
 package com.opalab
 
-import akka.actor.{ActorSystem, _}
-import scala.util.{Success, Failure}
-import akka.event.Logging
+import java.util.UUID
+
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-import scala.io.StdIn
-import com.typesafe.config.Config
+import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.config.ConfigFactory
+import spray.json.{DefaultJsonProtocol, _}
 
-class AkkaBot extends Actor {
-  val log = Logging(context.system, this)
-  // context.setReceiveTimeout(Duration.create("5 seconds"))
+import scala.collection.SortedMap
+import scala.concurrent.ExecutionContextExecutor
+import scala.io.StdIn
+import scala.util.{Failure, Success}
 
-  def receive = {
-    case message: String => {
-      log.info(s"Got string ~> $message")
-    }
-    case _ => {
-      log.info("Got something else then string,...")
-    }
+case class Person(
+                   first_name: String,
+                   last_name: Option[String] = None,
+                   var uuid: Option[String] = Some(UUID.randomUUID().toString)
+                 ) {
+
+  def asTuple = {
+    this.uuid = Some(this.uuid.getOrElse(UUID.randomUUID().toString))
+    this.uuid.get -> this
   }
 }
 
-object Main extends App {
-  val config = ConfigFactory.load()
+trait JsonSupportProtocols extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val personProtocol = jsonFormat3(Person.apply)
+}
 
-  implicit val system = ActorSystem.create("proto")
-  implicit val materializer = ActorMaterializer()
-  implicit val executionContext = system.dispatcher
+object Person extends JsonSupportProtocols
 
-  // val bot = system.actorOf(Props[AkkaBot], name = "simple-bot")
-  // bot ! "oto was here"
+trait Configuration {
+  final val config = ConfigFactory.load()
+}
 
-  val route =
-    get {
-      pathSingleSlash {
-        complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<html><body>Something here. Proto</body></html>"))
-      } ~
-        path("ping") {
-          complete("PONG!")
+trait Service extends JsonSupportProtocols {
+  implicit val system: ActorSystem
+
+  implicit def executor: ExecutionContextExecutor
+
+  implicit val materializer: Materializer
+
+  var people = SortedMap.empty[String, Person]
+
+  val routes = {
+    pathSingleSlash {
+      complete("proto")
+    } ~
+      pathPrefix("api" / "people") {
+        path(JavaUUID) { id =>
+          complete(people(id.toString))
         } ~
-        path("crash") {
-          sys.error("BOOM!")
-        }
-    }
+          logRequest("POST-PERSON") {
+            post {
+              entity(as[Person]) { person =>
+                people += person.asTuple
+                complete(person)
+              }
+            }
+          } ~ complete(people.map((pair) => pair._2.toJson))
+      }
+  }
+}
 
-  val bindingFuture = Http().bindAndHandle(route, config.getString("http.interface"), config.getInt("http.port"))
+
+object Main extends App with Service with Configuration {
+  override implicit val system = ActorSystem.create("proto")
+  override implicit val executor = system.dispatcher
+  override implicit val materializer = ActorMaterializer()
+
+  val bindingFuture = Http().bindAndHandle(
+    routes, config.getString("http.interface"), config.getInt("http.port")
+  )
 
   bindingFuture.onComplete {
     case Success(x) =>

@@ -3,55 +3,45 @@ name := """proto"""
 version := "1.0"
 
 scalaVersion := "2.11.8"
+val akkaVersion = "2.4.4"
+val scalaTest = "2.2.6"
+val sprayVersion = "1.3.3"
+val json4SVersion = "3.3.0"
 
 scalacOptions := Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8")
 
-resolvers += "spray repo" at "http://repo.spray.io"
+resolvers += Resolver.bintrayRepo("hseeberger", "maven")
 
-// javaOptions += "-Xms2G -Xmx2G"
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-core" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
 
-libraryDependencies ++= {
-  val akkaVersion = "2.4.4"
-  val scalaTest = "2.2.6"
-  val sprayVersion = "1.3.3"
-  Seq(
-    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-    "com.typesafe.akka" %% "akka-http-core" % akkaVersion,
-    "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
+
+  /*
+  "org.json4s" %% "json4s-core" % json4SVersion,
+  "org.json4s" %% "json4s-native" % json4SVersion,
+  "org.json4s" %% "json4s-jackson" % json4SVersion,
+    */
+
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaVersion % "test",
+  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % "test",
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
+  "org.scalatest" %% "scalatest" % scalaTest % "test"
+)
+
+libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
+initialCommands in (Test, console) := """ammonite.repl.Main.run("")"""
 
 
-    // "io.spray" %% "spray-can" % sprayVersion,
-    // "io.spray" %% "spray-routing" % sprayVersion,
-    // "io.spray" %% "spray-util" % sprayVersion,
-    // "io.spray" %% "spray-testkit" % sprayVersion % "test",
-
-
-    "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
-    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
-
-    "com.typesafe.akka" %% "akka-http-testkit" % akkaVersion % "test",
-    "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % "test",
-    "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
-    "org.scalatest" %% "scalatest" % scalaTest % "test"
-  )
-}
-
-// Revolver.settings
-
-// mainClass in (Compile, run) := Some("com.opalab.ProtoMain")
+mainClass in(Compile, run) := Some("com.opalab.Main")
 
 lazy val commonSettings = Seq(
   version := "0.1-SNAPSHOT",
   organization := "com.opalab"
 )
-
-/*
-lazy val app = (project in file("app")).
-  settings(commonSettings: _*).
-  settings(
-    // your settings here
-  )
-*/
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(JavaServerAppPackaging)
@@ -60,11 +50,17 @@ mainClass in assembly := Some("com.opalab.Main")
 
 test in assembly := {}
 
-
-// "org.scalatest" %% "scalatest" % "2.1.6" % "test",
-// "com.typesafe.akka" %% "akka-actor" % "2.4.4"
-//"com.typesafe.akka" %% "akka-remote" % "2.3.5",
-//"com.typesafe.akka" %% "akka-testkit" % "2.3.5"
-
 fork in run := true
 connectInput in run := true
+
+/*
+* // Bash Script config
+bashScriptExtraDefines += """addJava "-Dconfig.file=${app_home}/../conf/app.conf""""
+bashScriptExtraDefines += """addJava "-Dlog4j.configurationFile=${app_home}/../conf/log4j2.xml""""
+
+// Bat Script config
+batScriptExtraDefines += """set _JAVA_OPTS=%_JAVA_OPTS% -Dconfig.file=%AKKA_CLUSTER_NETSPLIT_SAMPLE_HOME%\\conf\\app.conf"""
+batScriptExtraDefines += """set _JAVA_OPTS=%_JAVA_OPTS% -Dlog4j.configurationFile=%AKKA_CLUSTER_NETSPLIT_SAMPLE_HOME%\\conf\\log4j2.xml"""
+Status API Training Shop Blog About
+
+* */
