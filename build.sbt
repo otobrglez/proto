@@ -46,7 +46,7 @@ lazy val commonSettings = Seq(
 enablePlugins(JavaAppPackaging)
 enablePlugins(JavaServerAppPackaging)
 
-mainClass in assembly := Some("com.opalab.Main")
+mainClass in assembly := Some("com.opalab.proto.Main")
 
 test in assembly := {}
 
