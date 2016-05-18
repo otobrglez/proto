@@ -26,6 +26,8 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-jackson" % json4SVersion,
     */
 
+  "net.ruippeixotog" %% "scala-scraper" % "1.0.0",
+
   "com.typesafe.akka" %% "akka-http-testkit" % akkaVersion % "test",
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % "test",
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",

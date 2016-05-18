@@ -1,8 +1,9 @@
 package com.opalab.proto.services
 
-import akka.actor.ActorSystem
+import akka.actor._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
+import com.opalab.proto.PingPongProtocol
 import com.opalab.proto.models._
 
 import scala.collection.SortedMap
@@ -12,6 +13,10 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.DefaultJsonProtocol
 import spray.json._
 
+
+
+
+
 trait ProtoService extends JsonSupportProtocols{
   implicit val system: ActorSystem
 
@@ -19,10 +24,19 @@ trait ProtoService extends JsonSupportProtocols{
 
   implicit val materializer: Materializer
 
+  // implicit val masterPong : ActorRef
+
+  implicit val pongActor : ActorRef
+
+  // pongActor ! PingPongProtocol.Ping
+
+
+
   var people = SortedMap.empty[String, Person]
 
   val routes = {
     pathSingleSlash {
+      pongActor ! "hello"
       complete("proto")
     } ~
       pathPrefix("api" / "people") {
